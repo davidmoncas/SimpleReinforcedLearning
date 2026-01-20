@@ -29,11 +29,17 @@ public class MoveToGoalAgent : Agent
         {
             accelerateTime = value;
             Academy.Instance.AutomaticSteppingEnabled = accelerateTime;
-            if(!accelerateTime)
+            if (!accelerateTime)
             {
                 Time.timeScale = 1f; // Reset time scale to normal
             }
         }
+    }
+
+    protected override void Awake()
+    {
+        base.Awake();
+        savedSpeed = movementSpeed;
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -43,10 +49,39 @@ public class MoveToGoalAgent : Agent
         sensor.AddObservation((Vector2)obstacles[0].position - (Vector2)transform.localPosition);
     }
 
-    protected override void Awake()
+    public override void Heuristic(in ActionBuffers actionsOut)
     {
-        base.Awake();
-        savedSpeed = movementSpeed;
+        var actions = actionsOut.ContinuousActions;
+        actions[0] = Input.GetAxisRaw("Horizontal");
+        actions[1] = Input.GetAxisRaw("Vertical");
+    }
+
+    public override void OnActionReceived(ActionBuffers actions)
+    {
+        float MoveX = actions.ContinuousActions[0];
+        float MoveY = actions.ContinuousActions[1];
+
+        transform.localPosition += movementSpeed * Time.deltaTime * new Vector3(MoveX, MoveY);
+    }
+
+    public override void OnEpisodeBegin()
+    {
+        PlaceObjects2D();
+        movementSpeed = savedSpeed;
+        robotStateController.SetState(RobotState.Moving);
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (movementSpeed == 0)
+            return;
+
+        if (other.TryGetComponent<CollisionReward>(out var reward))
+        {
+            SetReward(reward.Reward);
+            statsCounter.OnCollisionHappened(reward.collisionType);
+            HandleAnimations(reward.collisionType);
+        }
     }
 
     public async void HandleAnimations(StatsCounter.CollisionType collisionType)
@@ -66,42 +101,6 @@ public class MoveToGoalAgent : Agent
             }
         }
         EndEpisode();
-    }
-
-    public override void Heuristic(in ActionBuffers actionsOut)
-    {
-        var actions = actionsOut.ContinuousActions;
-        actions[0] = Input.GetAxisRaw("Horizontal");
-        actions[1] = Input.GetAxisRaw("Vertical");
-    }
-
-    public override void OnActionReceived(ActionBuffers actions)
-    {
-        float MoveX = actions.ContinuousActions[0];
-        float MoveY = actions.ContinuousActions[1];
-
-        transform.localPosition += movementSpeed * Time.deltaTime * new Vector3(MoveX, MoveY);
-    }
-
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (movementSpeed == 0)
-            return;
-
-        if (other.TryGetComponent<CollisionReward>(out var reward))
-        {
-            SetReward(reward.Reward);
-            statsCounter.OnCollisionHappened(reward.collisionType);
-            HandleAnimations(reward.collisionType);
-        }
-    }
-
-    public override void OnEpisodeBegin()
-    {
-        PlaceObjects2D();
-        movementSpeed = savedSpeed;
-        robotStateController.SetState(RobotState.Moving);
     }
 
     public void PlaceObjects2D()
