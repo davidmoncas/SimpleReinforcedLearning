@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data.Common;
 using UnityEngine;
 
 public class RobotAnimationController : MonoBehaviour
@@ -10,7 +11,6 @@ public class RobotAnimationController : MonoBehaviour
     private static readonly int MovingAnimation = Animator.StringToHash("Moving");
     private static readonly int DyingAnimation = Animator.StringToHash("Dying");
     private static readonly int WinningAnimation = Animator.StringToHash("Winning");
-
 
     void Start()
     {
@@ -52,5 +52,4 @@ public class RobotAnimationController : MonoBehaviour
                 break;
         }
     }
-
 }

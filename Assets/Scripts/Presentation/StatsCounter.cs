@@ -2,7 +2,6 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 
-
 public class StatsCounter : MonoBehaviour
 {
     public enum CollisionType { Target, Wall, Obstacle }
@@ -10,6 +9,8 @@ public class StatsCounter : MonoBehaviour
     [SerializeField] private TextMeshProUGUI wonText, obstacleText, wallText, totalText;
     [SerializeField] private RectTransform wonTextContainer, obstacleTextContainer, wallTextContainer, totalTextContainer;
     private int wonCount, obstacleCount, wallCount;
+    private Coroutine sizeChangeCoroutine;
+    private RectTransform sizeChangingObject;
 
     void Start()
     {
@@ -18,19 +19,25 @@ public class StatsCounter : MonoBehaviour
 
     public void OnCollisionHappened(CollisionType collisionType)
     {
+        if (sizeChangeCoroutine != null)
+        {
+            StopCoroutine(sizeChangeCoroutine);
+            sizeChangingObject.localScale = Vector3.one;
+        }
+
         switch (collisionType)
         {
             case CollisionType.Target:
                 wonCount++;
-                StartCoroutine(AnimateContainerCoroutine(wonTextContainer));
+                sizeChangeCoroutine = StartCoroutine(AnimateContainerCoroutine(wonTextContainer));
                 break;
             case CollisionType.Wall:
                 wallCount++;
-                StartCoroutine(AnimateContainerCoroutine(wallTextContainer));
+                sizeChangeCoroutine = StartCoroutine(AnimateContainerCoroutine(wallTextContainer));
                 break;
             case CollisionType.Obstacle:
                 obstacleCount++;
-                StartCoroutine(AnimateContainerCoroutine(obstacleTextContainer));
+                sizeChangeCoroutine = StartCoroutine(AnimateContainerCoroutine(obstacleTextContainer));
                 break;
         }
 
@@ -39,15 +46,18 @@ public class StatsCounter : MonoBehaviour
 
     private void UpdateTexts()
     {
-        wonText.text = "Won<br>" + wonCount;
-        obstacleText.text = "Obstacles<br>" + obstacleCount;
-        wallText.text = "Border<br>" + wallCount;
-        totalText.text = "Total: " + (wonCount + obstacleCount + wallCount);
+        float total = wonCount + obstacleCount + wallCount;
+        total = Mathf.Max(total, 1f);
+        wonText.text = $"Won<br> {wonCount} ({(wonCount / total * 100).ToString("F0")}%)";
+        obstacleText.text = $"Obstacles<br> {obstacleCount} ({(obstacleCount / total * 100).ToString("F0")}%)";
+        wallText.text = $"Border<br> {wallCount} ({(wallCount / total * 100).ToString("F0")}%)";
+        totalText.text = $"Total: {total}";
     }
 
     private IEnumerator AnimateContainerCoroutine(RectTransform container)
     {
         float durationInSeconds = 0.25f;
+        sizeChangingObject = container;
         Vector3 initialScale = container.localScale;
         int steps = 30;
         float sizeChange = 0.4f;

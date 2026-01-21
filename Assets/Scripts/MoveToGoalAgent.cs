@@ -13,137 +13,106 @@ public class MoveToGoalAgent : Agent
     [SerializeField] private Transform goal;
     [SerializeField] private Transform[] obstacles;
     [SerializeField] private float movementSpeed;
-    private float savedSpeed;
-    [SerializeField] private float minSeparation;
-    [SerializeField] private Transform minPosition, maxPosition;
     [SerializeField] private StatsCounter statsCounter;
-
     [SerializeField] private RobotStateController robotStateController;
-    [SerializeField] private bool WaitForAnimations;
-    [SerializeField] private bool accelerateTime;
+    [SerializeField] private bool waitForAnimations;
+    [SerializeField] private PlaceObjectsController placeObjectsController;
 
-    private bool UseTimeScale
-    {
-        get { return accelerateTime; }
-        set
-        {
-            accelerateTime = value;
-            Academy.Instance.AutomaticSteppingEnabled = accelerateTime;
-            if (!accelerateTime)
-            {
-                Time.timeScale = 1f; // Reset time scale to normal
-            }
-        }
-    }
+    private bool episodeEnding;
 
     protected override void Awake()
     {
         base.Awake();
-        savedSpeed = movementSpeed;
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        sensor.AddObservation((Vector2)transform.position);
-        sensor.AddObservation((Vector2)goal.position - (Vector2)transform.localPosition);
-        sensor.AddObservation((Vector2)obstacles[0].position - (Vector2)transform.localPosition);
+        sensor.AddObservation((Vector2)transform.localPosition);
+        sensor.AddObservation((Vector2)goal.localPosition - (Vector2)transform.localPosition);
+        foreach (var obstacle in obstacles)
+        {
+            sensor.AddObservation((Vector2)obstacle.localPosition - (Vector2)transform.localPosition);
+        }
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        var actions = actionsOut.ContinuousActions;
-        actions[0] = Input.GetAxisRaw("Horizontal");
-        actions[1] = Input.GetAxisRaw("Vertical");
+        var actions = actionsOut.DiscreteActions;
+        actions[0] = MapAxisToDiscreteAction((int)Input.GetAxisRaw("Horizontal"));
+        actions[1] = MapAxisToDiscreteAction((int)Input.GetAxisRaw("Vertical"));
     }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
-        float MoveX = actions.ContinuousActions[0];
-        float MoveY = actions.ContinuousActions[1];
+        if(robotStateController.State != RobotState.Moving)
+            return;
 
-        transform.localPosition += movementSpeed * Time.deltaTime * new Vector3(MoveX, MoveY);
+        float moveX = MapDiscreteActionToAxis(actions.DiscreteActions[0]);
+        float moveY = MapDiscreteActionToAxis(actions.DiscreteActions[1]);
+
+        transform.localPosition += movementSpeed * Time.deltaTime * new Vector3(moveX, moveY);
     }
 
     public override void OnEpisodeBegin()
     {
-        PlaceObjects2D();
-        movementSpeed = savedSpeed;
+        placeObjectsController.PlaceObjects2D();
+        episodeEnding = false;
         robotStateController.SetState(RobotState.Moving);
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (movementSpeed == 0)
+        if (robotStateController.State != RobotState.Moving)
             return;
 
         if (other.TryGetComponent<CollisionReward>(out var reward))
         {
             SetReward(reward.Reward);
-            statsCounter.OnCollisionHappened(reward.collisionType);
-            HandleAnimations(reward.collisionType);
+            statsCounter.OnCollisionHappened(reward.CollisionType);
+            HandleCollisionAsync(reward.CollisionType).Forget();
         }
     }
 
-    public async void HandleAnimations(StatsCounter.CollisionType collisionType)
+    private async UniTask HandleCollisionAsync(StatsCounter.CollisionType collisionType)
     {
-        if (WaitForAnimations)
+        if (episodeEnding)
+            return;
+
+        episodeEnding = true;
+
+        robotStateController.SetState(
+            collisionType == StatsCounter.CollisionType.Target
+                ? RobotState.Winning
+                : RobotState.Dying
+        );
+
+        if (!waitForAnimations)
         {
-            movementSpeed = 0;
-            if (collisionType == StatsCounter.CollisionType.Target)
-            {
-                robotStateController.SetState(RobotState.Winning);
-                await UniTask.Delay(TimeSpan.FromSeconds(1), ignoreTimeScale: true);
-            }
-            else if (collisionType == StatsCounter.CollisionType.Obstacle || collisionType == StatsCounter.CollisionType.Wall)
-            {
-                robotStateController.SetState(RobotState.Dying);
-                await UniTask.Delay(TimeSpan.FromSeconds(1), ignoreTimeScale: true);
-            }
+            EndEpisode();
+            return;
         }
+
+        await UniTask.Delay(TimeSpan.FromSeconds(1), ignoreTimeScale: true);
         EndEpisode();
     }
 
-    public void PlaceObjects2D()
+    private int MapDiscreteActionToAxis(int input)
     {
-        List<Transform> allObjects = new List<Transform> { this.transform, goal.transform };
-        allObjects.AddRange(obstacles.Select(o => o.transform));
-
-        List<Vector2> placedPositions = new List<Vector2>();
-
-        foreach (Transform obj in allObjects)
+        return input switch
         {
-            Vector2 newPos;
-            int attempts = 0;
-            const int maxAttempts = 100;
-
-            do
-            {
-                newPos = GetRandomPosition2D();
-                attempts++;
-            }
-            while (!IsValidPosition2D(newPos, placedPositions) && attempts < maxAttempts);
-
-            obj.position = new Vector3(newPos.x, newPos.y, obj.position.z); // preserve z
-            placedPositions.Add(newPos);
-        }
+            0 => -1,
+            1 => 0,
+            _ => 1,
+        };
     }
 
-    Vector2 GetRandomPosition2D()
+    private int MapAxisToDiscreteAction(int input)
     {
-        return new Vector2(
-            Random.Range(minPosition.position.x, maxPosition.position.x),
-            Random.Range(minPosition.position.y, maxPosition.position.y)
-        );
-    }
-
-    bool IsValidPosition2D(Vector2 pos, List<Vector2> others)
-    {
-        foreach (var other in others)
+        return input switch
         {
-            if (Vector2.Distance(pos, other) < minSeparation)
-                return false;
-        }
-        return true;
+            -1 => 0,
+            0 => 1,
+            _ => -1,
+        };
     }
-
 }

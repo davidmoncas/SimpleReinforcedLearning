@@ -4,8 +4,8 @@ using UnityEngine;
 public class RobotStateController : MonoBehaviour
 {
     public RobotState State;
-
     public event Action OnStateChanged;
+
     public void SetState(RobotState newState)
     {
         if (State == newState) return;
@@ -13,9 +13,8 @@ public class RobotStateController : MonoBehaviour
         State = newState;
         OnStateChanged?.Invoke();
     }
-
 }
 
-public enum RobotState { Moving, Winning, Dying }
+public enum RobotState { Moving, Winning, Dying, Undefined }
 
 
