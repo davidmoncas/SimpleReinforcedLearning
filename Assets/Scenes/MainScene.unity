@@ -7796,7 +7796,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52cb0097322ea4924b6f37c15bf3fe3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minSeparation: 0
+  minSeparation: 2
   minPosition: {fileID: 143530715}
   maxPosition: {fileID: 352670005}
   obstacles:
@@ -7849,13 +7849,10 @@ MonoBehaviour:
   - {fileID: 1080763779}
   - {fileID: 1399331631}
   movementSpeed: 2
-  minSeparation: 2
-  minPosition: {fileID: 143530715}
-  maxPosition: {fileID: 352670005}
   statsCounter: {fileID: 1800167243}
   robotStateController: {fileID: 1840416858}
   waitForAnimations: 0
-  placeObjectsController: {fileID: 0}
+  placeObjectsController: {fileID: 1110574457}
 --- !u!114 &1120842033
 MonoBehaviour:
   m_ObjectHideFlags: 0
