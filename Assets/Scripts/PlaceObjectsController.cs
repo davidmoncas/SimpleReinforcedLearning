@@ -20,7 +20,7 @@ public class PlaceObjectsController : MonoBehaviour
         allObjects.AddRange(obstacles.Select(o => o.transform));
     }
 
-    public void PlaceObjects2D()
+    public void PlaceObjectsRandomly()
     {
         placedPositions.Clear();
 
@@ -59,5 +59,4 @@ public class PlaceObjectsController : MonoBehaviour
         }
         return true;
     }
-
 }

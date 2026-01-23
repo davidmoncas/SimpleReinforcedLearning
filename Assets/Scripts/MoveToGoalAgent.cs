@@ -55,7 +55,7 @@ public class MoveToGoalAgent : Agent
 
     public override void OnEpisodeBegin()
     {
-        placeObjectsController.PlaceObjects2D();
+        placeObjectsController.PlaceObjectsRandomly();
         episodeEnding = false;
         robotStateController.SetState(RobotState.Moving);
     }

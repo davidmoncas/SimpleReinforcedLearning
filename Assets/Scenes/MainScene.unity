@@ -7819,7 +7819,6 @@ GameObject:
   - component: {fileID: 1120842036}
   - component: {fileID: 1120842037}
   - component: {fileID: 1120842038}
-  - component: {fileID: 1120842039}
   m_Layer: 0
   m_Name: -- Agent
   m_TagString: Untagged
@@ -7851,7 +7850,7 @@ MonoBehaviour:
   movementSpeed: 2
   statsCounter: {fileID: 1800167243}
   robotStateController: {fileID: 1840416858}
-  waitForAnimations: 0
+  waitForAnimations: 1
   placeObjectsController: {fileID: 1110574457}
 --- !u!114 &1120842033
 MonoBehaviour:
@@ -7875,9 +7874,9 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 63c621e73cc46411d9aa70c671c02d18, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 2eae111ef49684869a0977a4e551b85f, type: 3}
   m_InferenceDevice: 0
-  m_BehaviorType: 1
+  m_BehaviorType: 0
   m_BehaviorName: MoveToGoal
   TeamId: 0
   m_UseChildSensors: 1
@@ -7988,22 +7987,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &1120842039
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1120842031}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 88b6042bc9a5d4aa58d931eae49442e5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  agentParameters:
-    maxStep: 0
-  hasUpgradedFromAgentParameters: 1
-  MaxStep: 0
 --- !u!1 &1174905393
 GameObject:
   m_ObjectHideFlags: 0
